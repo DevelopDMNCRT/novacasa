@@ -46,8 +46,47 @@ const updateCountdown = () => {
   }
 }
 
-const fetchPredictions = async () => {
+const fetchMatchesAndPredictions = async () => {
   try {
+    // 1. Fetch matches from API to ensure exactly the same matches as Dashboard
+    const matchesRes = await fetch(`${API_BASE_URL}/api/matches`)
+    if (matchesRes.ok) {
+      const matchesData = await matchesRes.json()
+      const groups = { '1': [], '2': [], '3': [] }
+      matchesData.forEach(m => {
+        if (groups[m.jornada]) {
+          groups[m.jornada].push({
+            id: m.id,
+            date: m.date_text || '',
+            time: m.time_text || '',
+            match_date: m.match_date || null,
+            home: m.home_team,
+            away: m.away_team,
+            homeLogo: m.home_logo ? `https://flagcdn.com/w160/${m.home_logo}.png` : '',
+            awayLogo: m.away_logo ? `https://flagcdn.com/w160/${m.away_logo}.png` : '',
+            homeScore: '',
+            awayScore: ''
+          })
+        }
+      })
+
+      Object.values(groups).forEach(group => {
+        group.sort((a, b) => {
+          if (a.match_date && b.match_date) {
+            return new Date(a.match_date) - new Date(b.match_date);
+          }
+          return 0;
+        });
+      });
+
+      matchdays.value = [
+        { title: 'Jornada 1', matches: groups['1'] },
+        { title: 'Jornada 2', matches: groups['2'] },
+        { title: 'Jornada 3', matches: groups['3'] }
+      ]
+    }
+
+    // 2. Fetch user predictions
     const token = localStorage.getItem('token')
     if (!token) return
 
@@ -74,7 +113,7 @@ const fetchPredictions = async () => {
       }
     }
   } catch (err) {
-    console.error('Error fetching predictions:', err)
+    console.error('Error fetching matches and predictions:', err)
   }
 }
 
@@ -91,9 +130,7 @@ onMounted(() => {
     }
   }
   
-  if (isAuthenticated.value) {
-    fetchPredictions()
-  }
+  fetchMatchesAndPredictions()
 })
 
 watch(() => route.query.jornada, (newJ) => {
@@ -143,41 +180,7 @@ const toggleAuthMode = () => {
 
 const currentMatchdayIndex = ref(0)
 
-const matchdays = ref([
-  {
-    title: 'Primera Fase',
-    matches: [
-      { id: 1, date: '11 de Junio, 2026', time: 'Estadio Azteca', home: 'México', away: 'Sudáfrica', homeLogo: 'https://flagcdn.com/w160/mx.png', awayLogo: 'https://flagcdn.com/w160/za.png', homeScore: '', awayScore: '' },
-      { id: 2, date: '12 de Junio, 2026', time: 'SoFi Stadium', home: 'Estados Unidos', away: 'Paraguay', homeLogo: 'https://flagcdn.com/w160/us.png', awayLogo: 'https://flagcdn.com/w160/py.png', homeScore: '', awayScore: '' },
-      { id: 3, date: '13 de Junio, 2026', time: 'MetLife Stadium', home: 'Brasil', away: 'Marruecos', homeLogo: 'https://flagcdn.com/w160/br.png', awayLogo: 'https://flagcdn.com/w160/ma.png', homeScore: '', awayScore: '' },
-      { id: 4, date: '16 de Junio, 2026', time: 'Arrowhead Stadium', home: 'Argentina', away: 'Argelia', homeLogo: 'https://flagcdn.com/w160/ar.png', awayLogo: 'https://flagcdn.com/w160/dz.png', homeScore: '', awayScore: '' },
-      { id: 5, date: '17 de Junio, 2026', time: 'NRG Stadium', home: 'Portugal', away: 'Rep. Democrática del Congo', homeLogo: 'https://flagcdn.com/w160/pt.png', awayLogo: 'https://flagcdn.com/w160/cd.png', homeScore: '', awayScore: '' },
-      { id: 6, date: '17 de Junio, 2026', time: 'AT&T Stadium', home: 'Inglaterra', away: 'Croacia', homeLogo: 'https://flagcdn.com/w160/gb-eng.png', awayLogo: 'https://flagcdn.com/w160/hr.png', homeScore: '', awayScore: '' }
-    ]
-  },
-  {
-    title: 'Segunda Jornada',
-    matches: [
-      { id: 7, date: '18 de Junio, 2026', time: 'Estadio Akron', home: 'México', away: 'Corea del Sur', homeLogo: 'https://flagcdn.com/w160/mx.png', awayLogo: 'https://flagcdn.com/w160/kr.png', homeScore: '', awayScore: '' },
-      { id: 8, date: '19 de Junio, 2026', time: 'Lincoln Financial Field', home: 'Brasil', away: 'Haití', homeLogo: 'https://flagcdn.com/w160/br.png', awayLogo: 'https://flagcdn.com/w160/ht.png', homeScore: '', awayScore: '' },
-      { id: 9, date: '20 de Junio, 2026', time: 'NRG Stadium', home: 'Países Bajos', away: 'Suecia', homeLogo: 'https://flagcdn.com/w160/nl.png', awayLogo: 'https://flagcdn.com/w160/se.png', homeScore: '', awayScore: '' },
-      { id: 10, date: '20 de Junio, 2026', time: 'BMO Field', home: 'Alemania', away: 'Costa de Marfil', homeLogo: 'https://flagcdn.com/w160/de.png', awayLogo: 'https://flagcdn.com/w160/ci.png', homeScore: '', awayScore: '' },
-      { id: 11, date: '21 de Junio, 2026', time: 'Mercedes-Benz Stadium', home: 'España', away: 'Arabia Saudita', homeLogo: 'https://flagcdn.com/w160/es.png', awayLogo: 'https://flagcdn.com/w160/sa.png', homeScore: '', awayScore: '' },
-      { id: 12, date: '22 de Junio, 2026', time: 'AT&T Stadium', home: 'Argentina', away: 'Austria', homeLogo: 'https://flagcdn.com/w160/ar.png', awayLogo: 'https://flagcdn.com/w160/at.png', homeScore: '', awayScore: '' }
-    ]
-  },
-  {
-    title: 'Tercera Jornada',
-    matches: [
-      { id: 13, date: '24 de Junio, 2026', time: 'Estadio Azteca', home: 'República Checa', away: 'México', homeLogo: 'https://flagcdn.com/w160/cz.png', awayLogo: 'https://flagcdn.com/w160/mx.png', homeScore: '', awayScore: '' },
-      { id: 14, date: '24 de Junio, 2026', time: 'Hard Rock Stadium', home: 'Escocia', away: 'Brasil', homeLogo: 'https://flagcdn.com/w160/gb-sct.png', awayLogo: 'https://flagcdn.com/w160/br.png', homeScore: '', awayScore: '' },
-      { id: 15, date: '26 de Junio, 2026', time: 'Estadio Akron', home: 'Uruguay', away: 'España', homeLogo: 'https://flagcdn.com/w160/uy.png', awayLogo: 'https://flagcdn.com/w160/es.png', homeScore: '', awayScore: '' },
-      { id: 16, date: '26 de Junio, 2026', time: 'Gillette Stadium', home: 'Noruega', away: 'Francia', homeLogo: 'https://flagcdn.com/w160/no.png', awayLogo: 'https://flagcdn.com/w160/fr.png', homeScore: '', awayScore: '' },
-      { id: 17, date: '27 de Junio, 2026', time: 'Hard Rock Stadium', home: 'Colombia', away: 'Portugal', homeLogo: 'https://flagcdn.com/w160/co.png', awayLogo: 'https://flagcdn.com/w160/pt.png', homeScore: '', awayScore: '' },
-      { id: 18, date: '27 de Junio, 2026', time: 'AT&T Stadium', home: 'Jordania', away: 'Argentina', homeLogo: 'https://flagcdn.com/w160/jo.png', awayLogo: 'https://flagcdn.com/w160/ar.png', homeScore: '', awayScore: '' }
-    ]
-  }
-])
+const matchdays = ref([])
 
 const nextMatchday = () => {
   if (currentMatchdayIndex.value < matchdays.value.length - 1) {
@@ -465,18 +468,18 @@ const saveAll = async () => {
         <h1 class="view-title">Quiniela Mundialista</h1>
         <p class="view-subtitle">
           Realiza tus predicciones para la Fase de Grupos - 
-          <strong class="highlight-text">{{ matchdays[currentMatchdayIndex].title }}</strong>
+          <strong class="highlight-text" v-if="matchdays.length">{{ matchdays[currentMatchdayIndex]?.title }}</strong>
         </p>
       </div>
     </div>
 
     <!-- Matchday Pages -->
-    <div class="matchday-wrapper">
+    <div class="matchday-wrapper" v-if="matchdays.length">
       <transition name="slide-fade" mode="out-in">
         <div :key="currentMatchdayIndex" class="matchday-container">
           <div class="matches-grid">
             <MatchCard 
-              v-for="match in matchdays[currentMatchdayIndex].matches" 
+              v-for="match in matchdays[currentMatchdayIndex]?.matches" 
               :key="match.id" 
               :match="match" 
             />

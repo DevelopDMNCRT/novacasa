@@ -35,7 +35,7 @@ body::before {
   width: 100%;
   height: 100%;
   background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-              radial-gradient(circle at 0% 100%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
+    radial-gradient(circle at 0% 100%, rgba(245, 158, 11, 0.03) 0%, transparent 50%);
   z-index: -1;
   pointer-events: none;
 }
@@ -104,18 +104,27 @@ button {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* GLOBAL RESPONSIVE RECOVERY SYSTEM */
-html, body {
+html,
+body {
   max-width: 100vw;
   overflow-x: hidden !important;
   scroll-behavior: smooth;
 }
 
-.app-container, .main-content {
+.app-container,
+.main-content {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
@@ -134,6 +143,7 @@ html, body {
   .view-title {
     font-size: 2.5rem !important;
   }
+
   .matches-grid {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
     gap: 1.5rem !important;
@@ -145,32 +155,41 @@ html, body {
     margin-bottom: 2rem !important;
     text-align: center !important;
   }
+
   .countdown-banner {
     flex-direction: column !important;
     gap: 1.5rem !important;
     padding: 1.5rem !important;
   }
+
   .view-title {
     font-size: 2rem !important;
     text-align: center !important;
   }
+
   .view-subtitle {
     text-align: center !important;
   }
+
   .matches-grid {
     grid-template-columns: 1fr !important;
     gap: 1rem !important;
   }
+
   .stat-cards {
     flex-direction: column !important;
     gap: 1rem !important;
   }
+
   .actions-footer {
     flex-direction: column-reverse !important;
     gap: 1rem !important;
     padding: 1.5rem !important;
   }
-  .btn-primary, .btn-secondary, .btn-save-all {
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-save-all {
     width: 100% !important;
     padding: 1rem !important;
     justify-content: center !important;
@@ -181,22 +200,29 @@ html, body {
   .view-title {
     font-size: 1.75rem !important;
   }
+
   .timer-unit {
     min-width: 50px !important;
   }
+
   .timer-value {
     font-size: 1.75rem !important;
   }
+
   .timer-desc {
     font-size: 0.6rem !important;
   }
-  .auth-card, .contact-modal {
+
+  .auth-card,
+  .contact-modal {
     padding: 1.5rem !important;
   }
+
   .form-row {
     flex-direction: column !important;
     gap: 1rem !important;
   }
+
   .quiniela-view {
     padding: 4rem 1rem !important;
   }
@@ -233,11 +259,12 @@ html, body {
 }
 
 .sponsor-footer-logo {
-  max-width: 300px;
+  max-width: 600px;
   width: 100%;
   height: auto;
   object-fit: contain;
-  opacity: 0.8; /* Highly visible and sharp */
+  opacity: 0.8;
+  /* Highly visible and sharp */
   transition: all 0.3s ease;
 }
 
@@ -245,4 +272,3 @@ html, body {
   opacity: 1;
   transform: scale(1.03);
 }
-

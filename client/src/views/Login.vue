@@ -11,11 +11,23 @@ const password = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 
+const restrictToNumbers = (event) => {
+  const charCode = (event.which) ? event.which : event.keyCode;
+  if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+    event.preventDefault();
+  }
+}
+
 async function handleLogin() {
   errorMsg.value = ''
 
   if (!whatsapp.value || !password.value) {
     errorMsg.value = 'Todos los campos son requeridos.'
+    return
+  }
+
+  if (whatsapp.value.length !== 10) {
+    errorMsg.value = 'El número debe tener exactamente 10 dígitos.'
     return
   }
 
@@ -67,6 +79,9 @@ async function handleLogin() {
             class="field-input"
             placeholder="Ej: 5512345678"
             autocomplete="tel"
+            maxlength="10"
+            @keypress="restrictToNumbers"
+            @input="whatsapp = whatsapp.replace(/\\D/g, '')"
           />
         </div>
 

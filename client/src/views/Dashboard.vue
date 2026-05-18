@@ -100,6 +100,7 @@ const fetchDashboardData = async () => {
           id: match.id || Math.random(),
           jornada: match.jornada || '?',
           date: match.date_text || '',
+          match_date: match.match_date || null,
           home: match.home_team || '?',
           away: match.away_team || '?',
           homeLogo: match.home_logo || '',
@@ -134,7 +135,17 @@ const fetchDashboardData = async () => {
   }
 }
 
-const groupPredictions = computed(() => predictions.value.filter(p => p.jornada === '1' || p.jornada === '2' || p.jornada === '3'))
+const groupPredictions = computed(() => {
+  const filtered = predictions.value.filter(p => p.jornada === '1' || p.jornada === '2' || p.jornada === '3');
+  return filtered.sort((a, b) => {
+    const jDiff = parseInt(a.jornada) - parseInt(b.jornada);
+    if (jDiff !== 0) return jDiff;
+    if (a.match_date && b.match_date) {
+      return new Date(a.match_date) - new Date(b.match_date);
+    }
+    return 0;
+  });
+})
 const knockoutPredictions = computed(() => predictions.value.filter(p => p.jornada === 'R16'))
 
 onMounted(() => {
