@@ -56,8 +56,13 @@ router.get('/', async (req, res) => {
       };
     });
 
-    // 3. Sort by points descending
-    leaderboard.sort((a, b) => b.points - a.points);
+    // 3. Sort by points descending, then by name alphabetically (deterministic tie-breaker)
+    leaderboard.sort((a, b) => {
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+      return a.name.localeCompare(b.name);
+    });
 
     // 4. Assign rank (Dense Ranking)
     let currentRank = 1;
