@@ -36,6 +36,12 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     await db.query('BEGIN');
 
+    // Fetch finalized matches to prevent modifying their predictions
+    const finalizedMatchesRes = await db.query(
+      "SELECT id FROM matches WHERE home_score_real IS NOT NULL AND away_score_real IS NOT NULL"
+    );
+    const finalizedIds = new Set(finalizedMatchesRes.rows.map(m => m.id));
+
     // Save match predictions
     if (matches && Array.isArray(matches)) {
       for (const match of matches) {
@@ -44,6 +50,11 @@ router.post('/', requireAuth, async (req, res) => {
         
         // Skip if scores are not provided (empty, null, or NaN)
         if (homeScore === '' || awayScore === '' || homeScore === null || awayScore === null || isNaN(homeScore) || isNaN(awayScore)) {
+          continue;
+        }
+
+        // Prevent modification of predictions for finalized matches
+        if (finalizedIds.has(id)) {
           continue;
         }
 

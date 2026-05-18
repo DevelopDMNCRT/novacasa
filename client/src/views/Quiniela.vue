@@ -65,7 +65,8 @@ const fetchMatchesAndPredictions = async () => {
             homeLogo: m.home_logo ? `https://flagcdn.com/w160/${m.home_logo}.png` : '',
             awayLogo: m.away_logo ? `https://flagcdn.com/w160/${m.away_logo}.png` : '',
             homeScore: '',
-            awayScore: ''
+            awayScore: '',
+            isFinalized: m.home_score_real !== null && m.away_score_real !== null
           })
         }
       })
