@@ -4,6 +4,8 @@ import { Medal, Award, TrendingUp, Trophy } from 'lucide-vue-next'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
+const currentUser = ref(null)
+
 const leaderboard = ref([])
 
 const currentPage = ref(1)
@@ -34,6 +36,22 @@ const fetchLeaderboard = async () => {
     const res = await fetch(`${API_BASE_URL}/api/leaderboard`)
     if (res.ok) {
       leaderboard.value = await res.json()
+      
+      // Auto-paginate and scroll to current user
+      if (currentUser.value) {
+        const userIdx = leaderboard.value.findIndex(u => u.id === currentUser.value.id)
+        if (userIdx !== -1) {
+          const userPage = Math.floor(userIdx / itemsPerPage) + 1
+          currentPage.value = userPage
+          
+          setTimeout(() => {
+            const row = document.querySelector('.table-row.current-user')
+            if (row) {
+              row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
+          }, 400)
+        }
+      }
     }
   } catch (err) {
     console.error('Error fetching leaderboard:', err)
@@ -41,6 +59,16 @@ const fetchLeaderboard = async () => {
 }
 
 onMounted(() => {
+  // Load current user from localStorage
+  try {
+    const savedUser = localStorage.getItem('user')
+    if (savedUser) {
+      currentUser.value = JSON.parse(savedUser)
+    }
+  } catch (e) {
+    console.error('Error loading current user:', e)
+  }
+  
   fetchLeaderboard()
 })
 
@@ -80,7 +108,7 @@ const getMedalColor = (rank) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="user in paginatedLeaderboard" :key="user.id" class="table-row" :class="{'top-tier': user.rank <= 3}">
+          <tr v-for="user in paginatedLeaderboard" :key="user.id" class="table-row" :class="{'top-tier': user.rank <= 3, 'current-user': user.id === currentUser?.id}">
             <td class="rank-col">
               <div class="rank-badge" :class="`rank-${user.rank}`">
                 <Medal v-if="user.rank <= 3" :size="20" :color="getMedalColor(user.rank)" class="medal-icon" />
@@ -386,6 +414,33 @@ const getMedalColor = (rank) => {
   color: white;
   border-color: var(--primary-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.table-row.current-user {
+  background-color: #006847 !important;
+  color: white !important;
+  font-weight: 700;
+}
+
+.table-row.current-user td {
+  color: white !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.table-row.current-user .user-name,
+.table-row.current-user .user-handle,
+.table-row.current-user .points-value {
+  color: white !important;
+}
+
+.table-row.current-user .rank-badge {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+}
+
+.table-row.current-user .avatar:not(.avatar-gold):not(.avatar-silver):not(.avatar-bronze) {
+  background: white !important;
+  color: #006847 !important;
 }
 
 @media (max-width: 768px) {

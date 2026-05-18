@@ -28,7 +28,7 @@ const props = defineProps({
           </div>
           <span class="team-name">{{ match.home }}</span>
         </div>
-        <input type="number" v-model="match.homeScore" placeholder="--" class="score-input" :disabled="match.saved || match.isFinalized">
+        <input type="number" v-model="match.homeScore" placeholder="--" class="score-input" :disabled="match.saved || match.isFinalized || match.isLocked">
       </div>
 
       <div class="team-row">
@@ -38,7 +38,7 @@ const props = defineProps({
           </div>
           <span class="team-name">{{ match.away }}</span>
         </div>
-        <input type="number" v-model="match.awayScore" placeholder="--" class="score-input" :disabled="match.saved || match.isFinalized">
+        <input type="number" v-model="match.awayScore" placeholder="--" class="score-input" :disabled="match.saved || match.isFinalized || match.isLocked">
       </div>
     </div>
   </div>

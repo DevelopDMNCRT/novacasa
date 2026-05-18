@@ -36,11 +36,11 @@ router.post('/', requireAuth, async (req, res) => {
   try {
     await db.query('BEGIN');
 
-    // Fetch finalized matches to prevent modifying their predictions
-    const finalizedMatchesRes = await db.query(
-      "SELECT id FROM matches WHERE home_score_real IS NOT NULL AND away_score_real IS NOT NULL"
+    // Fetch matches to prevent modifying predictions for finalized or locked matches
+    const dbMatchesRes = await db.query(
+      "SELECT id, match_date, home_score_real, away_score_real FROM matches"
     );
-    const finalizedIds = new Set(finalizedMatchesRes.rows.map(m => m.id));
+    const dbMatches = dbMatchesRes.rows;
 
     // Save match predictions
     if (matches && Array.isArray(matches)) {
@@ -48,14 +48,25 @@ router.post('/', requireAuth, async (req, res) => {
         // match object structure: { id: 1, homeScore: 2, awayScore: 1 }
         const { id, homeScore, awayScore } = match;
         
+        const dbMatch = dbMatches.find(m => m.id === id);
+        if (!dbMatch) continue;
+
         // Skip if scores are not provided (empty, null, or NaN)
         if (homeScore === '' || awayScore === '' || homeScore === null || awayScore === null || isNaN(homeScore) || isNaN(awayScore)) {
           continue;
         }
 
         // Prevent modification of predictions for finalized matches
-        if (finalizedIds.has(id)) {
+        if (dbMatch.home_score_real !== null && dbMatch.away_score_real !== null) {
           continue;
+        }
+
+        // Prevent modification if match starts in less than 1 hour (or has already started)
+        if (dbMatch.match_date) {
+          const closingTime = new Date(dbMatch.match_date).getTime() - (60 * 60 * 1000); // 1 hour in ms
+          if (Date.now() >= closingTime) {
+            continue;
+          }
         }
 
         await db.query(

@@ -32,6 +32,7 @@ const matchSchedule = [
   { id: 18, jornada: '3', date: 'Jun 27', home: 'Jordania', away: 'Argentina', homeLogo: 'jo', awayLogo: 'ar' },
 ]
 
+const rawUserPredictions = ref([])
 const predictions = ref(matchSchedule.map(m => ({
   ...m,
   prediction: 'Pendiente',
@@ -78,7 +79,8 @@ const fetchDashboardData = async () => {
     if (matchesRes.ok && predsRes.ok) {
       const matchesData = await matchesRes.json()
       const predsData = await predsRes.json()
-      const userPreds = predsData.predictions || []
+      rawUserPredictions.value = predsData.predictions || []
+      const userPreds = rawUserPredictions.value
 
       if (!Array.isArray(matchesData)) {
         console.warn('matchesData is not an array:', matchesData)
@@ -146,7 +148,41 @@ const groupPredictions = computed(() => {
     return 0;
   });
 })
-const knockoutPredictions = computed(() => predictions.value.filter(p => p.jornada === 'R16'))
+const isJornada3Finalized = computed(() => {
+  const j3Matches = predictions.value.filter(p => p.jornada === '3')
+  if (j3Matches.length === 0) return false
+  return j3Matches.every(m => m.realResult !== 'Pendiente')
+})
+
+const r16Matches = [
+  { id: 19, label: '1A vs 2B', home: 'Corea del Sur', away: 'Marruecos',    homeLogo: 'kr',     awayLogo: 'ma',    date: '29 Jun, 2026' },
+  { id: 20, label: '1B vs 2A', home: 'Brasil',        away: 'México',       homeLogo: 'br',     awayLogo: 'mx',    date: '29 Jun, 2026' },
+  { id: 21, label: '1C vs 2G', home: 'Argentina',     away: 'Países Bajos', homeLogo: 'ar',     awayLogo: 'nl',    date: '30 Jun, 2026' },
+  { id: 22, label: '1G vs 2C', home: 'Alemania',      away: 'Argelia',      homeLogo: 'de',     awayLogo: 'dz',    date: '30 Jun, 2026' },
+  { id: 23, label: '1D vs 2F', home: 'España',        away: 'Croacia',      homeLogo: 'es',     awayLogo: 'hr',    date: '1 Jul, 2026'  },
+  { id: 24, label: '1F vs 2D', home: 'Inglaterra',    away: 'Uruguay',      homeLogo: 'gb-eng', awayLogo: 'uy',    date: '1 Jul, 2026'  },
+  { id: 25, label: '1E vs 2?', home: 'Portugal',      away: 'Francia',      homeLogo: 'pt',     awayLogo: 'fr',    date: '2 Jul, 2026'  },
+  { id: 26, label: 'WC1 vs WC2', home: 'Escocia',    away: 'Austria',      homeLogo: 'gb-sct', awayLogo: 'at',    date: '2 Jul, 2026'  },
+]
+
+const knockoutPredictions = computed(() => {
+  if (!isJornada3Finalized.value) return []
+  return r16Matches.map(match => {
+    const found = rawUserPredictions.value.find(p => p.match_id === match.id)
+    return {
+      id: match.id,
+      jornada: '16VOS',
+      date: match.date,
+      home: match.home,
+      away: match.away,
+      homeLogo: match.homeLogo,
+      awayLogo: match.awayLogo,
+      prediction: found ? `${found.home_score} - ${found.away_score}` : 'Pendiente',
+      realResult: 'Pendiente',
+      status: found ? 'Guardado' : 'Sin completar'
+    }
+  })
+})
 
 onMounted(() => {
   fetchDashboardData()
@@ -241,8 +277,8 @@ onMounted(() => {
       </table>
     </div>
 
-        <h2 v-if="false" class="section-heading mt-section">Dieciseisavos de Final</h2>
-    <div v-if="false" class="table-container glass-card">
+    <h2 v-if="isJornada3Finalized" class="section-heading mt-section">Dieciseisavos de Final</h2>
+    <div v-if="isJornada3Finalized" class="table-container glass-card">
       <table class="predictions-table">
         <thead>
           <tr>
@@ -305,8 +341,8 @@ onMounted(() => {
     </div>
 
     <!-- CHAMPION IN LIST FORMAT -->
-    <h2 class="section-heading mt-section" v-if="championName !== 'N/D'">Campeón del Mundo</h2>
-    <div class="table-container glass-card" style="margin-bottom: 4rem;" v-if="championName !== 'N/D'">
+    <h2 class="section-heading mt-section" v-if="isJornada3Finalized && championName !== 'N/D'">Campeón del Mundo</h2>
+    <div class="table-container glass-card" style="margin-bottom: 4rem;" v-if="isJornada3Finalized && championName !== 'N/D'">
       <table class="predictions-table">
         <tbody>
           <tr class="table-row">

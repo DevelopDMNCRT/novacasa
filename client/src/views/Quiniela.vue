@@ -66,7 +66,8 @@ const fetchMatchesAndPredictions = async () => {
             awayLogo: m.away_logo ? `https://flagcdn.com/w160/${m.away_logo}.png` : '',
             homeScore: '',
             awayScore: '',
-            isFinalized: m.home_score_real !== null && m.away_score_real !== null
+            isFinalized: m.home_score_real !== null && m.away_score_real !== null,
+            isLocked: m.match_date ? (Date.now() >= (new Date(m.match_date).getTime() - 60 * 60 * 1000)) : false
           })
         }
       })
@@ -99,12 +100,21 @@ const fetchMatchesAndPredictions = async () => {
       const data = await res.json()
       
       data.predictions.forEach(pred => {
+        let found = false
         for (const md of matchdays.value) {
           const m = md.matches.find(m => m.id === pred.match_id)
           if (m) {
             m.homeScore = pred.home_score !== null ? pred.home_score : ''
             m.awayScore = pred.away_score !== null ? pred.away_score : ''
+            found = true
             break
+          }
+        }
+        if (!found) {
+          const m = r16Matches.value.find(m => m.id === pred.match_id)
+          if (m) {
+            m.homeScore = pred.home_score !== null ? pred.home_score : ''
+            m.awayScore = pred.away_score !== null ? pred.away_score : ''
           }
         }
       })
@@ -199,14 +209,14 @@ const prevMatchday = () => {
 
 
 const r16Matches = ref([
-  { id: 19, label: '1A vs 2B', home: 'Corea del Sur', away: 'Marruecos',    homeLogo: 'https://flagcdn.com/w160/kr.png',     awayLogo: 'https://flagcdn.com/w160/ma.png',    date: '29 Jun, 2026', stadium: 'SoFi Stadium',             homeScore: '', awayScore: '' },
-  { id: 20, label: '1B vs 2A', home: 'Brasil',        away: 'México',       homeLogo: 'https://flagcdn.com/w160/br.png',     awayLogo: 'https://flagcdn.com/w160/mx.png',    date: '29 Jun, 2026', stadium: 'MetLife Stadium',          homeScore: '', awayScore: '' },
-  { id: 21, label: '1C vs 2G', home: 'Argentina',     away: 'Países Bajos', homeLogo: 'https://flagcdn.com/w160/ar.png',     awayLogo: 'https://flagcdn.com/w160/nl.png',    date: '30 Jun, 2026', stadium: 'AT&T Stadium',             homeScore: '', awayScore: '' },
-  { id: 22, label: '1G vs 2C', home: 'Alemania',      away: 'Argelia',      homeLogo: 'https://flagcdn.com/w160/de.png',     awayLogo: 'https://flagcdn.com/w160/dz.png',    date: '30 Jun, 2026', stadium: 'NRG Stadium',              homeScore: '', awayScore: '' },
-  { id: 23, label: '1D vs 2F', home: 'España',        away: 'Croacia',      homeLogo: 'https://flagcdn.com/w160/es.png',     awayLogo: 'https://flagcdn.com/w160/hr.png',    date: '1 Jul, 2026',  stadium: 'Hard Rock Stadium',       homeScore: '', awayScore: '' },
-  { id: 24, label: '1F vs 2D', home: 'Inglaterra',    away: 'Uruguay',      homeLogo: 'https://flagcdn.com/w160/gb-eng.png', awayLogo: 'https://flagcdn.com/w160/uy.png',    date: '1 Jul, 2026',  stadium: 'Gillette Stadium',        homeScore: '', awayScore: '' },
-  { id: 25, label: '1E vs 2?', home: 'Portugal',      away: 'Francia',      homeLogo: 'https://flagcdn.com/w160/pt.png',     awayLogo: 'https://flagcdn.com/w160/fr.png',    date: '2 Jul, 2026',  stadium: 'Estadio Azteca',          homeScore: '', awayScore: '' },
-  { id: 26, label: 'WC1 vs WC2', home: 'Escocia',    away: 'Austria',      homeLogo: 'https://flagcdn.com/w160/gb-sct.png', awayLogo: 'https://flagcdn.com/w160/at.png',    date: '2 Jul, 2026',  stadium: 'Mercedes-Benz Stadium',   homeScore: '', awayScore: '' },
+  { id: 19, label: '1A vs 2B', home: 'Corea del Sur', away: 'Marruecos',    homeLogo: 'https://flagcdn.com/w160/kr.png',     awayLogo: 'https://flagcdn.com/w160/ma.png',    date: '29 Jun, 2026', stadium: 'SoFi Stadium',             homeScore: '', awayScore: '', match_date: '2026-06-29T18:00:00Z' },
+  { id: 20, label: '1B vs 2A', home: 'Brasil',        away: 'México',       homeLogo: 'https://flagcdn.com/w160/br.png',     awayLogo: 'https://flagcdn.com/w160/mx.png',    date: '29 Jun, 2026', stadium: 'MetLife Stadium',          homeScore: '', awayScore: '', match_date: '2026-06-29T21:00:00Z' },
+  { id: 21, label: '1C vs 2G', home: 'Argentina',     away: 'Países Bajos', homeLogo: 'https://flagcdn.com/w160/ar.png',     awayLogo: 'https://flagcdn.com/w160/nl.png',    date: '30 Jun, 2026', stadium: 'AT&T Stadium',             homeScore: '', awayScore: '', match_date: '2026-06-30T18:00:00Z' },
+  { id: 22, label: '1G vs 2C', home: 'Alemania',      away: 'Argelia',      homeLogo: 'https://flagcdn.com/w160/de.png',     awayLogo: 'https://flagcdn.com/w160/dz.png',    date: '30 Jun, 2026', stadium: 'NRG Stadium',              homeScore: '', awayScore: '', match_date: '2026-06-30T21:00:00Z' },
+  { id: 23, label: '1D vs 2F', home: 'España',        away: 'Croacia',      homeLogo: 'https://flagcdn.com/w160/es.png',     awayLogo: 'https://flagcdn.com/w160/hr.png',    date: '1 Jul, 2026',  stadium: 'Hard Rock Stadium',       homeScore: '', awayScore: '', match_date: '2026-07-01T18:00:00Z' },
+  { id: 24, label: '1F vs 2D', home: 'Inglaterra',    away: 'Uruguay',      homeLogo: 'https://flagcdn.com/w160/gb-eng.png', awayLogo: 'https://flagcdn.com/w160/uy.png',    date: '1 Jul, 2026',  stadium: 'Gillette Stadium',        homeScore: '', awayScore: '', match_date: '2026-07-01T21:00:00Z' },
+  { id: 25, label: '1E vs 2?', home: 'Portugal',      away: 'Francia',      homeLogo: 'https://flagcdn.com/w160/pt.png',     awayLogo: 'https://flagcdn.com/w160/fr.png',    date: '2 Jul, 2026',  stadium: 'Estadio Azteca',          homeScore: '', awayScore: '', match_date: '2026-07-02T18:00:00Z' },
+  { id: 26, label: 'WC1 vs WC2', home: 'Escocia',    away: 'Austria',      homeLogo: 'https://flagcdn.com/w160/gb-sct.png', awayLogo: 'https://flagcdn.com/w160/at.png',    date: '2 Jul, 2026',  stadium: 'Mercedes-Benz Stadium',   homeScore: '', awayScore: '', match_date: '2026-07-02T21:00:00Z' },
 ])
 
 const r16Teams = [
@@ -237,7 +247,8 @@ const backToR16 = () => { phase.value = 'r16'; window.scrollTo({ top: 0, behavio
 const normalizedR16Matches = computed(() => {
   return r16Matches.value.map(match => ({
     ...match,
-    time: match.stadium
+    time: match.stadium,
+    isLocked: match.match_date ? (Date.now() >= (new Date(match.match_date).getTime() - 60 * 60 * 1000)) : false
   }))
 })
 
@@ -263,6 +274,13 @@ const qualifiedTeams = ref([
 
 const selectedChampion = ref(null)
 const isChampionLocked = computed(() => new Date() >= new Date('2026-06-29T00:00:00'))
+
+const isJornada3Finalized = computed(() => {
+  if (!matchdays.value || matchdays.value.length < 3) return false
+  const j3 = matchdays.value[2]
+  if (!j3 || !j3.matches || j3.matches.length === 0) return false
+  return j3.matches.every(m => m.isFinalized)
+})
 
 const selectTeam = (teamId) => {
   selectedChampion.value = teamId
@@ -321,6 +339,16 @@ const saveAll = async () => {
     matchdays.value.forEach(md => {
       md.matches.forEach(m => { allMatches.push(m) })
     })
+
+    if (isJornada3Finalized.value) {
+      normalizedR16Matches.value.forEach(m => {
+        allMatches.push({
+          id: m.id,
+          homeScore: m.homeScore,
+          awayScore: m.awayScore
+        })
+      })
+    }
 
     const res = await fetch(`${API_BASE_URL}/api/predictions`, {
       method: 'POST',
@@ -514,9 +542,9 @@ const saveAll = async () => {
           SIGUIENTE JORNADA
           <ChevronRight :size="20" />
         </button>
-        <!-- Button to R16 hidden for now -->
+        <!-- Button to R16 shown when Jornada 3 is completed -->
         <button 
-          v-if="currentMatchdayIndex === matchdays.length - 1 && false" 
+          v-if="currentMatchdayIndex === matchdays.length - 1 && isJornada3Finalized" 
           @click="goToR16" 
           class="btn-primary btn-next-flow"
         >
@@ -526,8 +554,8 @@ const saveAll = async () => {
       </div>
             </template>
 
-      <!-- R16 KNOCKOUT PHASE (Hidden for now) -->
-      <template v-else-if="phase === 'r16' && false">
+      <!-- R16 KNOCKOUT PHASE -->
+      <template v-else-if="phase === 'r16'">
         <div class="knockout-phase animate-fade-in">
           <div class="view-header">
             <div class="title-section">
