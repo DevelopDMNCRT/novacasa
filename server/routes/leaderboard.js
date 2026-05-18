@@ -59,11 +59,11 @@ router.get('/', async (req, res) => {
     // 3. Sort by points descending
     leaderboard.sort((a, b) => b.points - a.points);
 
-    // 4. Assign rank
+    // 4. Assign rank (Dense Ranking)
     let currentRank = 1;
     for (let i = 0; i < leaderboard.length; i++) {
       if (i > 0 && leaderboard[i].points < leaderboard[i - 1].points) {
-        currentRank = i + 1;
+        currentRank++;
       }
       leaderboard[i].rank = currentRank;
     }
