@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Trophy, TrendingUp, Filter, Phone, Calendar, User, RefreshCw, Download, Mail } from 'lucide-vue-next'
+import { Trophy, TrendingUp, Filter, Phone, Calendar, User, RefreshCw, Download, Mail, Trash2 } from 'lucide-vue-next'
 import { API_BASE_URL } from '../config'
 
 const users = ref([])
@@ -70,6 +70,28 @@ const exportCSV = () => {
   document.body.removeChild(link)
 }
 
+const deleteUser = async (id) => {
+  if (!confirm('¿Estás seguro de que deseas eliminar este participante? Esta acción no se puede deshacer.')) return;
+  
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/api/admin/participantes/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Error al eliminar.')
+    }
+
+    // Refresh list
+    fetchUsers()
+  } catch (err) {
+    alert(err.message)
+  }
+}
+
 onMounted(() => {
   fetchUsers()
 })
@@ -113,6 +135,7 @@ onMounted(() => {
             <th>Ciudad</th>
             <th>Estado</th>
             <th>Fecha de Alta</th>
+            <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -148,6 +171,11 @@ onMounted(() => {
                 <Calendar :size="14" class="icon-dim" />
                 <span class="p-date">{{ formatDate(u.created_at) }}</span>
               </div>
+            </td>
+            <td class="text-right">
+              <button @click="deleteUser(u.id)" class="btn-icon btn-danger" title="Eliminar participante">
+                <Trash2 :size="16" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -395,5 +423,28 @@ onMounted(() => {
     flex: 1;
     justify-content: center;
   }
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-danger {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.btn-danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  transform: scale(1.05);
 }
 </style>

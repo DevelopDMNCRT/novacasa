@@ -42,4 +42,24 @@ router.get('/participantes', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/participantes/:id
+router.delete('/participantes/:id', requireAuth, requireAdmin, async (req, res) => {
+  const userId = req.params.id;
+  try {
+    const result = await db.query(
+      `UPDATE users SET deleted_at = NOW() WHERE id = $1 AND is_admin = FALSE RETURNING id`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Participante no encontrado o ya eliminado.' });
+    }
+
+    res.json({ message: 'Participante eliminado exitosamente.' });
+  } catch (err) {
+    console.error('Error deleting participante:', err);
+    res.status(500).json({ error: 'Error al eliminar participante.' });
+  }
+});
+
 module.exports = router;

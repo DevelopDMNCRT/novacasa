@@ -164,24 +164,14 @@ async function handleRegister() {
           <label class="field-label" for="whatsapp">Número de WhatsApp</label>
           <div class="phone-row">
             <div class="prefix-selector">
-              <button
-                type="button"
-                class="prefix-btn"
-                :class="{ active: whatsappPrefix === 'MX' }"
-                @click="whatsappPrefix = 'MX'; onPrefixChange()"
-                title="México +52"
+              <select
+                v-model="whatsappPrefix"
+                @change="onPrefixChange"
+                class="prefix-select"
               >
-                🇲🇽 <span class="prefix-code">+52</span>
-              </button>
-              <button
-                type="button"
-                class="prefix-btn"
-                :class="{ active: whatsappPrefix === 'US' }"
-                @click="whatsappPrefix = 'US'; onPrefixChange()"
-                title="Estados Unidos +1"
-              >
-                🇺🇸 <span class="prefix-code">+1</span>
-              </button>
+                <option value="MX">🇲🇽 +52</option>
+                <option value="US">🇺🇸 +1</option>
+              </select>
             </div>
             <input
               id="whatsapp"
@@ -388,42 +378,31 @@ async function handleRegister() {
   flex-shrink: 0;
 }
 
-.prefix-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.6rem;
-  background: transparent;
+.prefix-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: transparent;
   border: none;
-  cursor: pointer;
+  padding: 0.7rem 2rem 0.7rem 1rem;
   font-size: 1rem;
+  font-family: inherit;
+  color: #1a1a2e;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b6375' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
   transition: background 0.15s;
-  border-right: 1px solid #e0e0e0;
-  line-height: 1;
 }
 
-.prefix-btn:last-child {
-  border-right: none;
+.prefix-select:hover {
+  background-color: #f0fdf4;
 }
 
-.prefix-btn:hover {
-  background: #f0fdf4;
-}
-
-.prefix-btn.active {
-  background: #006847;
-  color: white;
-}
-
-.prefix-btn.active .prefix-code {
-  color: white;
-}
-
-.prefix-code {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #4a4a5a;
-  letter-spacing: 0.5px;
+.prefix-select:focus {
+  background-color: #f0fdf4;
+  box-shadow: inset 0 0 0 2px #006847;
 }
 
 .phone-input {
@@ -538,8 +517,8 @@ async function handleRegister() {
   .row-two {
     grid-template-columns: 1fr;
   }
-  .prefix-btn {
-    padding: 0.4rem 0.5rem;
+  .prefix-select {
+    padding: 0.6rem 1.5rem 0.6rem 0.6rem;
   }
 }
 </style>
