@@ -56,12 +56,25 @@ router.get('/', async (req, res) => {
       };
     });
 
-    // 3. Sort by points descending, then by name alphabetically (deterministic tie-breaker)
+    // 3. Sort by points descending, then by name alphabetically (deterministic, environment-agnostic tie-breaker), then by ID
     leaderboard.sort((a, b) => {
       if (b.points !== a.points) {
         return b.points - a.points;
       }
-      return a.name.localeCompare(b.name);
+      
+      // Normalize names: lowercase and remove accents/diacritics to ensure identical alphabetical sorting on both Windows (local) and Linux (Vercel)
+      const cleanA = a.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const cleanB = b.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      
+      if (cleanA < cleanB) return -1;
+      if (cleanA > cleanB) return 1;
+      
+      // Fallback to case-sensitive original string comparison
+      if (a.name < b.name) return -1;
+      if (a.name > b.name) return 1;
+      
+      // Secondary fallback to user ID to guarantee absolute stability
+      return a.id - b.id;
     });
 
     // 4. Assign rank (Dense Ranking)
