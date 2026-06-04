@@ -63,7 +63,7 @@ function logout() {
   <nav class="navbar animate-fade-in">
     <div class="nav-container header-white">
       <router-link to="/" class="logo">
-        <img src="/logo.png" alt="Nova Casa Logo" class="nav-logo-img" />
+        <img src="/quinova-logo.png" alt="Nova Casa Logo" class="nav-logo-img" />
       </router-link>
 
       <div class="nav-links">
@@ -181,8 +181,11 @@ function logout() {
   transition: all 0.3s ease;
 }
 
-.nav-link:hover, .router-link-active {
+.nav-link:hover {
   color: var(--primary-color);
+}
+.router-link-active {
+  color: #CE1126;
 }
 
 
@@ -206,15 +209,15 @@ function logout() {
   color: #fff;
   padding: 0.4rem 0.9rem;
   border-radius: 6px;
-  background: #006847;
-  border: 1.5px solid #006847;
+  background: #CE1126;
+  border: 1.5px solid #CE1126;
   transition: all 0.2s ease;
   text-decoration: none;
 }
 
 .btn-register:hover {
-  background: #00573c;
-  border-color: #00573c;
+  background: #B00F20;
+  border-color: #B00F20;
 }
 
 .dropdown-wrapper {
@@ -377,8 +380,12 @@ function logout() {
 }
 
 
-.mobile-nav-link:hover, .mobile-nav-link.router-link-active {
+.mobile-nav-link:hover {
   color: var(--primary-color);
+  padding-left: 10px;
+}
+.mobile-nav-link.router-link-active {
+  color: #CE1126;
   padding-left: 10px;
 }
 

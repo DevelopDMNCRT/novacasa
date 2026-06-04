@@ -64,7 +64,7 @@ const handleContactSubmit = async () => {
     </main>
     
     <footer class="app-footer">
-      <div class="footer-content glass-card">
+      <div class="footer-content">
         <div class="footer-info">
           <h3>Quiniela Mundialista Nova Casa 2026</h3>
           <p>© 2026 Todos los derechos reservados. El juego es para mayores de 18 años.</p>
@@ -163,22 +163,22 @@ const handleContactSubmit = async () => {
 }
 
 .footer-content {
-  background: #f8fafc;
+  background: #CE1126;
   padding: 2rem 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-radius: 0;
-  border: 1px solid var(--border-color);
+  border: 1px solid #B00F20;
 }
 
 .footer-info h3 {
-  color: var(--primary-color);
+  color: white;
   margin-bottom: 0.5rem;
 }
 
 .footer-info p {
-  color: var(--text-secondary);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.85rem;
 }
 
@@ -188,7 +188,7 @@ const handleContactSubmit = async () => {
 }
 
 .footer-links a, .footer-btn {
-  color: var(--text-secondary);
+  color: white;
   font-size: 0.9rem;
   font-weight: 600;
   transition: color 0.3s ease;
@@ -200,7 +200,7 @@ const handleContactSubmit = async () => {
 }
 
 .footer-links a:hover, .footer-btn:hover {
-  color: var(--primary-color);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Modal Styles */

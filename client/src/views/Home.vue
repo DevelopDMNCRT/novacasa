@@ -9,6 +9,7 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
     <div class="hero-container">
       <header class="hero animate-fade-in">
       <div class="hero-content">
+        <img src="/escudo.png" alt="Escudo" class="hero-escudo" />
         <h1 class="hero-title text-gradient">Vive la Emoción <br><span>Mundialista Nova Casa</span></h1>
         <p class="hero-description">Predice los resultados del escenario más grande del mundo. Desafía a expertos de todo el planeta y gana la gloria eterna (y grandes premios).</p>
         
@@ -115,6 +116,8 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
 }
 
 .hero-content {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -126,11 +129,27 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
 }
 
+.hero-content > *:not(.hero-escudo) {
+  position: relative;
+  z-index: 1;
+}
+
 .hero-title {
   font-size: clamp(3rem, 8vw, 4.5rem);
   font-weight: 800;
   line-height: 1.1;
   color: var(--text-primary);
+}
+
+.hero-escudo {
+  position: absolute;
+  right: -4rem;
+  bottom: -4rem;
+  width: 650px;
+  height: auto;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .hero-title span {
@@ -175,7 +194,7 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
 }
 
 .btn-comenzar {
-  background: var(--text-primary);
+  background: #CE1126;
   color: white;
   border: none;
   padding: 1rem 3rem;
@@ -199,7 +218,7 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
   left: 0;
   width: 0%;
   height: 100%;
-  background: #006847; /* Mexican Green */
+  background: #B00F20; /* Dark Red */
   z-index: -1;
   transition: width 0.4s ease;
 }
@@ -250,21 +269,20 @@ import { Zap, Trophy, Medal, Award } from 'lucide-vue-next'
 }
 
 .prizes-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
+  background: #CE1126; /* Solid red background */
   padding: 2rem;
-  border: 1px solid var(--border-color);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid #B00F20;
+  box-shadow: 0 20px 40px rgba(206, 17, 38, 0.3);
   border-radius: 0;
 }
 
 .prizes-title {
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: white;
   margin-bottom: 2rem;
   text-align: left;
-  border-bottom: 2px solid var(--border-color);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
   padding-bottom: 1rem;
 }
 
