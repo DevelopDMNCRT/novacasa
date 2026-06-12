@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import Navbar from './components/Navbar.vue'
 import { X, Send, CheckCircle, AlertCircle } from 'lucide-vue-next'
+import { fetchSofascoreMatchesByDate, findMatchResultInSofascore } from './utils/sofascoreSync'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -50,6 +51,59 @@ const handleContactSubmit = async () => {
     isSending.value = false
   }
 }
+
+// Client-Side Silent Sync for Sofascore
+onMounted(async () => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/matches`)
+    if (!res.ok) return
+    const matches = await res.json()
+    
+    // Find past matches that don't have a result yet
+    const pendingMatches = matches.filter(m => 
+      m.home_score_real === null && 
+      m.match_date && 
+      new Date(m.match_date) <= new Date()
+    )
+
+    if (pendingMatches.length === 0) return
+    console.log('[Sync] Found pending matches:', pendingMatches.length)
+
+    const datesToFetch = new Set()
+    pendingMatches.forEach(m => {
+      const d = new Date(m.match_date)
+      const dateString = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      datesToFetch.add(dateString)
+    })
+
+    const sofascoreDataByDate = {}
+    for (const dateStr of datesToFetch) {
+      sofascoreDataByDate[dateStr] = await fetchSofascoreMatchesByDate(dateStr)
+    }
+
+    for (const m of pendingMatches) {
+      const d = new Date(m.match_date)
+      const dateString = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const events = sofascoreDataByDate[dateString]
+      if (events && events.length > 0) {
+        const result = findMatchResultInSofascore(m, events)
+        if (result) {
+          await fetch(`${API_BASE_URL}/api/matches/${m.id}/sofascore-sync`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              home_score_real: result.homeScore,
+              away_score_real: result.awayScore
+            })
+          })
+          console.log(`[Sync] Updated match ${m.id} via client-side!`)
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Sync] Error during silent client-side sync:', error)
+  }
+})
 </script>
 
 <template>

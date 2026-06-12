@@ -255,9 +255,9 @@ router.get('/send-reminders', async (req, res) => {
                 // Partido finalizado, actualizamos en DB
                 console.log(`[Cron-Sofascore] Updating match ${dbMatch.home_team} vs ${dbMatch.away_team} -> ${result.homeScore} - ${result.awayScore}`);
                 await db.query(
-                  \`UPDATE matches 
+                  `UPDATE matches 
                    SET home_score_real = $1, away_score_real = $2, updated_at = NOW()
-                   WHERE id = $3\`,
+                   WHERE id = $3`,
                   [result.homeScore, result.awayScore, dbMatch.id]
                 );
                 updatedCount++;
