@@ -1,3 +1,5 @@
+const fetch = require('node-fetch');
+
 const teamDictionary = {
   'México': 'Mexico',
   'Estados Unidos': 'USA',
@@ -38,44 +40,50 @@ function normalizeName(name) {
     .trim();
 }
 
-function translateToSofascore(dbName) {
+function translateToApiFootball(dbName) {
   return teamDictionary[dbName] || dbName;
 }
 
-export async function fetchSofascoreMatchesByDate(dateString) {
-  const url = `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${dateString}`;
+const API_KEY = process.env.API_FOOTBALL_KEY;
+
+async function fetchFixturesByDate(dateString) {
+  if (!API_KEY) {
+    console.error('[API-Football] Missing API_FOOTBALL_KEY');
+    return [];
+  }
+  const url = `https://v3.football.api-sports.io/fixtures?date=${dateString}`;
   try {
     const response = await fetch(url, {
       headers: {
-        'Accept': '*/*',
-        // El navegador inyectará automáticamente User-Agent, Origin, Referer, evadiendo a Cloudflare
+        'x-apisports-key': API_KEY,
+        'Accept': 'application/json'
       }
     });
 
     if (!response.ok) {
-      console.warn(`[Sofascore Sync] Error fetching ${dateString}: ${response.status}`);
+      console.warn(`[API-Football] Error fetching ${dateString}: ${response.status}`);
       return [];
     }
 
     const data = await response.json();
-    return data.events || [];
+    return data.response || [];
   } catch (error) {
-    console.error(`[Sofascore Sync] Failed request for ${dateString}:`, error.message);
+    console.error(`[API-Football] Failed request for ${dateString}:`, error.message);
     return [];
   }
 }
 
-export function findMatchResultInSofascore(dbMatch, sofascoreEvents) {
-  const homeEnglish = translateToSofascore(dbMatch.home_team);
-  const awayEnglish = translateToSofascore(dbMatch.away_team);
+function findMatchResultInApiFootball(dbMatch, apiEvents) {
+  const homeEnglish = translateToApiFootball(dbMatch.home_team);
+  const awayEnglish = translateToApiFootball(dbMatch.away_team);
 
   const homeNorm = normalizeName(homeEnglish);
   const awayNorm = normalizeName(awayEnglish);
 
-  const matchEvent = sofascoreEvents.find(ev => {
-    if (!ev.homeTeam || !ev.awayTeam) return false;
-    const evHome = normalizeName(ev.homeTeam.name);
-    const evAway = normalizeName(ev.awayTeam.name);
+  const matchEvent = apiEvents.find(ev => {
+    if (!ev.teams || !ev.teams.home || !ev.teams.away) return false;
+    const evHome = normalizeName(ev.teams.home.name);
+    const evAway = normalizeName(ev.teams.away.name);
 
     return (evHome === homeNorm && evAway === awayNorm) || 
            (evHome.includes(homeNorm) && evAway.includes(awayNorm));
@@ -83,13 +91,20 @@ export function findMatchResultInSofascore(dbMatch, sofascoreEvents) {
 
   if (!matchEvent) return null;
 
-  // status.type === 'finished' significa que el partido ya terminó
-  if (matchEvent.status && matchEvent.status.type === 'finished') {
+  // status.short === 'FT' means Full Time
+  // also valid: 'AET' (After Extra Time), 'PEN' (Penalties)
+  const finishedStatuses = ['FT', 'AET', 'PEN'];
+  if (matchEvent.fixture && matchEvent.fixture.status && finishedStatuses.includes(matchEvent.fixture.status.short)) {
     return {
-      homeScore: matchEvent.homeScore.current,
-      awayScore: matchEvent.awayScore.current
+      homeScore: matchEvent.goals.home,
+      awayScore: matchEvent.goals.away
     };
   }
 
   return null;
 }
+
+module.exports = {
+  fetchFixturesByDate,
+  findMatchResultInApiFootball
+};
