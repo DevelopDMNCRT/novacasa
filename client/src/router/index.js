@@ -10,20 +10,17 @@ const routes = [
   {
     path: '/quiniela',
     name: 'Quiniela',
-    component: () => import('../views/Quiniela.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/Quiniela.vue')
   },
   {
     path: '/mis-pronosticos',
     name: 'MyPredictions',
-    component: () => import('../views/Dashboard.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/Dashboard.vue')
   },
   {
     path: '/tabla-general',
     name: 'Leaderboard',
-    component: () => import('../views/Leaderboard.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('../views/Leaderboard.vue')
   },
   {
     path: '/reglas',
@@ -81,6 +78,7 @@ const router = createRouter({
   }
 })
 
+/*
 router.beforeEach((to, from, next) => {
   const isAuthenticated = !!localStorage.getItem('token')
   let user = null
@@ -103,5 +101,6 @@ router.beforeEach((to, from, next) => {
     next()
   }
 })
+*/
 
 export default router

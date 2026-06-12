@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { sendMatchReminderEmail } = require('../email');
 const { broadcastPush } = require('../webpush');
+const { fetchSofascoreMatchesByDate, findMatchResultInSofascore } = require('../utils/sofascore');
 
 // Cron endpoint: GET /api/cron/send-reminders
 // This endpoint will be configured in vercel.json to run periodically.
@@ -205,6 +206,73 @@ router.get('/send-reminders', async (req, res) => {
     } catch (pushFlowErr) {
       console.error('[Cron-Push ERROR]:', pushFlowErr);
       logData.push_notifications = { success: false, error: pushFlowErr.message };
+    }
+
+    // ==========================================
+    // TAREA C: SINCRONIZAR MARCADORES DESDE SOFASCORE
+    // ==========================================
+    try {
+      logData.sofascore_sync = { success: false, matches_updated: 0 };
+      
+      // Consultamos partidos de ayer y hoy que ya hayan comenzado y que NO tengan marcador guardado
+      const pendingMatchesQuery = `
+        SELECT * FROM matches 
+        WHERE match_date <= NOW() 
+          AND (home_score_real IS NULL OR away_score_real IS NULL)
+      `;
+      const pendingRes = await db.query(pendingMatchesQuery);
+      const pendingMatches = pendingRes.rows;
+
+      console.log(`[Cron-Sofascore] Found ${pendingMatches.length} pending matches without scores.`);
+
+      if (pendingMatches.length > 0) {
+        // Agrupar por fecha (YYYY-MM-DD)
+        const datesToFetch = new Set();
+        pendingMatches.forEach(m => {
+          if (m.match_date) {
+            // Extraer solo la fecha de match_date (ej: 2026-06-11)
+            const dateStr = new Date(m.match_date).toISOString().split('T')[0];
+            datesToFetch.add(dateStr);
+          }
+        });
+
+        let updatedCount = 0;
+
+        for (const dateStr of datesToFetch) {
+          console.log(`[Cron-Sofascore] Fetching events for ${dateStr}`);
+          const events = await fetchSofascoreMatchesByDate(dateStr);
+          
+          if (events.length > 0) {
+            // Revisamos qué partidos pendientes de esta fecha podemos actualizar
+            const matchesForDate = pendingMatches.filter(m => {
+              if (!m.match_date) return false;
+              return new Date(m.match_date).toISOString().split('T')[0] === dateStr;
+            });
+
+            for (const dbMatch of matchesForDate) {
+              const result = findMatchResultInSofascore(dbMatch, events);
+              if (result) {
+                // Partido finalizado, actualizamos en DB
+                console.log(`[Cron-Sofascore] Updating match ${dbMatch.home_team} vs ${dbMatch.away_team} -> ${result.homeScore} - ${result.awayScore}`);
+                await db.query(
+                  \`UPDATE matches 
+                   SET home_score_real = $1, away_score_real = $2, updated_at = NOW()
+                   WHERE id = $3\`,
+                  [result.homeScore, result.awayScore, dbMatch.id]
+                );
+                updatedCount++;
+              }
+            }
+          }
+        }
+        
+        logData.sofascore_sync = { success: true, matches_updated: updatedCount };
+      } else {
+        logData.sofascore_sync = { success: true, message: 'No pending matches to sync.', matches_updated: 0 };
+      }
+    } catch (sofaErr) {
+      console.error('[Cron-Sofascore ERROR]:', sofaErr);
+      logData.sofascore_sync = { success: false, error: sofaErr.message };
     }
 
     // Retornar reporte unificado
