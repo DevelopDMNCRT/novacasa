@@ -107,11 +107,6 @@ const fetchDashboardData = async () => {
         realResult = `${match.home_score_real} - ${match.away_score_real}`
       }
 
-      // Parche de emergencia para forzar que se vea en Vercel
-      if (match.home_team === 'México' && match.away_team === 'Sudáfrica') {
-        realResult = '2 - 0';
-      }
-
       return {
         id: match.id || Math.random(),
         jornada: match.jornada || '?',
