@@ -111,9 +111,6 @@ const fetchDashboardData = async () => {
       if (match.home_team === 'México' && match.away_team === 'Sudáfrica') {
         realResult = '2 - 0';
       }
-      if (match.home_team === 'Estados Unidos' && match.away_team === 'Paraguay') {
-        realResult = '0 - 0'; // Ajusta si el resultado es otro
-      }
 
       return {
         id: match.id || Math.random(),
