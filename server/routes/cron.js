@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { sendMatchReminderEmail } = require('../email');
 const { broadcastPush } = require('../webpush');
-const { fetchSofascoreMatchesByDate, findMatchResultInSofascore } = require('../utils/sofascore');
+const { fetchFixturesByDate, findMatchResultInApiFootball } = require('../utils/apifootballSync');
 
 // Cron endpoint: GET /api/cron/send-reminders
 // This endpoint will be configured in vercel.json to run periodically.
@@ -209,70 +209,70 @@ router.get('/send-reminders', async (req, res) => {
     }
 
     // ==========================================
-    // TAREA C: SINCRONIZAR MARCADORES DESDE SOFASCORE
+    // TAREA C: SINCRONIZAR MARCADORES DESDE API-FOOTBALL
     // ==========================================
     try {
-      logData.sofascore_sync = { success: false, matches_updated: 0 };
+      logData.scores_sync = { success: false, matches_updated: 0 };
       
-      // Consultamos partidos de ayer y hoy que ya hayan comenzado y que NO tengan marcador guardado
-      const pendingMatchesQuery = `
-        SELECT * FROM matches 
-        WHERE match_date <= NOW() 
-          AND (home_score_real IS NULL OR away_score_real IS NULL)
-      `;
-      const pendingRes = await db.query(pendingMatchesQuery);
-      const pendingMatches = pendingRes.rows;
-
-      console.log(`[Cron-Sofascore] Found ${pendingMatches.length} pending matches without scores.`);
-
-      if (pendingMatches.length > 0) {
-        // Agrupar por fecha (YYYY-MM-DD)
-        const datesToFetch = new Set();
-        pendingMatches.forEach(m => {
-          if (m.match_date) {
-            // Extraer solo la fecha de match_date (ej: 2026-06-11)
-            const dateStr = new Date(m.match_date).toISOString().split('T')[0];
-            datesToFetch.add(dateStr);
-          }
-        });
-
-        let updatedCount = 0;
-
-        for (const dateStr of datesToFetch) {
-          console.log(`[Cron-Sofascore] Fetching events for ${dateStr}`);
-          const events = await fetchSofascoreMatchesByDate(dateStr);
-          
-          if (events.length > 0) {
-            // Revisamos qué partidos pendientes de esta fecha podemos actualizar
-            const matchesForDate = pendingMatches.filter(m => {
-              if (!m.match_date) return false;
-              return new Date(m.match_date).toISOString().split('T')[0] === dateStr;
-            });
-
-            for (const dbMatch of matchesForDate) {
-              const result = findMatchResultInSofascore(dbMatch, events);
-              if (result) {
-                // Partido finalizado, actualizamos en DB
-                console.log(`[Cron-Sofascore] Updating match ${dbMatch.home_team} vs ${dbMatch.away_team} -> ${result.homeScore} - ${result.awayScore}`);
-                await db.query(
-                  `UPDATE matches 
-                   SET home_score_real = $1, away_score_real = $2, updated_at = NOW()
-                   WHERE id = $3`,
-                  [result.homeScore, result.awayScore, dbMatch.id]
-                );
-                updatedCount++;
-              }
-            }
-          }
+      const monthMap = {'enero':1,'febrero':2,'marzo':3,'abril':4,'mayo':5,'junio':6,'julio':7,'agosto':8,'septiembre':9,'octubre':10,'noviembre':11,'diciembre':12};
+      function parseMatchDate(text) {
+        if (!text) return null;
+        const lower = text.toLowerCase().replace(/,/g, '');
+        const parts = lower.split(' de ');
+        if (parts.length >= 2) {
+          const day = parseInt(parts[0]);
+          const rest = parts[1].split(' ');
+          const month = monthMap[rest[0]] || 6;
+          const year = rest[1] ? parseInt(rest[1]) : 2026;
+          return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
         }
-        
-        logData.sofascore_sync = { success: true, matches_updated: updatedCount };
-      } else {
-        logData.sofascore_sync = { success: true, message: 'No pending matches to sync.', matches_updated: 0 };
+        return null;
       }
-    } catch (sofaErr) {
-      console.error('[Cron-Sofascore ERROR]:', sofaErr);
-      logData.sofascore_sync = { success: false, error: sofaErr.message };
+
+      const pendingRes = await db.query(
+        'SELECT * FROM matches WHERE home_score_real IS NULL AND away_score_real IS NULL'
+      );
+      const pendingMatches = pendingRes.rows;
+      console.log(`[Cron-Scores] Found ${pendingMatches.length} pending matches without scores.`);
+
+      const datesToFetch = new Set();
+      const validMatches = [];
+      const now2 = new Date();
+
+      for (const m of pendingMatches) {
+        // Try match_date first, fall back to date_text parsing
+        let d = m.match_date ? new Date(m.match_date) : parseMatchDate(m.date_text);
+        if (d && d <= now2) {
+          const ds = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+          datesToFetch.add(ds);
+          validMatches.push({ ...m, parsedDateString: ds });
+        }
+      }
+
+      let updatedCount = 0;
+      const apiByDate = {};
+      for (const ds of datesToFetch) {
+        console.log(`[Cron-Scores] Fetching API-Football fixtures for ${ds}`);
+        apiByDate[ds] = await fetchFixturesByDate(ds);
+      }
+
+      for (const m of validMatches) {
+        const events = apiByDate[m.parsedDateString] || [];
+        const result = findMatchResultInApiFootball(m, events);
+        if (result) {
+          console.log(`[Cron-Scores] Updating ${m.home_team} vs ${m.away_team} -> ${result.homeScore}-${result.awayScore}`);
+          await db.query(
+            'UPDATE matches SET home_score_real=$1, away_score_real=$2, updated_at=NOW() WHERE id=$3',
+            [result.homeScore, result.awayScore, m.id]
+          );
+          updatedCount++;
+        }
+      }
+
+      logData.scores_sync = { success: true, matches_updated: updatedCount };
+    } catch (scoresErr) {
+      console.error('[Cron-Scores ERROR]:', scoresErr);
+      logData.scores_sync = { success: false, error: scoresErr.message };
     }
 
     // Retornar reporte unificado
