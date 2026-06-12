@@ -59,20 +59,50 @@ onMounted(async () => {
     if (!res.ok) return
     const matches = await res.json()
     
+    const monthMap = {'enero':1, 'febrero':2, 'marzo':3, 'abril':4, 'mayo':5, 'junio':6, 'julio':7, 'agosto':8, 'septiembre':9, 'octubre':10, 'noviembre':11, 'diciembre':12};
+    
+    // Función robusta para sacar la fecha de date_text
+    const getRealDate = (dateText) => {
+      if (!dateText) return null;
+      const lower = dateText.toLowerCase();
+      let day = 1;
+      let month = 6; // default Junio
+      let year = 2026;
+      
+      const parts = lower.replace(/,/g, '').split(' de ');
+      if (parts.length >= 2) {
+        day = parseInt(parts[0], 10);
+        const mYear = parts[1].split(' ');
+        month = monthMap[mYear[0]] || 6;
+        if (mYear.length > 1) {
+          year = parseInt(mYear[1], 10);
+        }
+      } else {
+        // Fallback for "18 de junio"
+        const p2 = lower.split(' ');
+        if (p2.length >= 3) {
+           day = parseInt(p2[0], 10);
+           month = monthMap[p2[2]] || 6;
+        }
+      }
+      return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    };
+
     // Find past matches that don't have a result yet
-    const pendingMatches = matches.filter(m => 
-      m.home_score_real === null && 
-      m.match_date && 
-      new Date(m.match_date) <= new Date()
-    )
+    const pendingMatches = matches.filter(m => {
+      if (m.home_score_real !== null) return false;
+      const d = getRealDate(m.date_text);
+      if (!d) return false;
+      return d <= new Date();
+    });
 
     if (pendingMatches.length === 0) return
     console.log('[Sync] Found pending matches:', pendingMatches.length)
 
     const datesToFetch = new Set()
     pendingMatches.forEach(m => {
-      const d = new Date(m.match_date)
-      const dateString = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const d = getRealDate(m.date_text);
+      const dateString = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`
       datesToFetch.add(dateString)
     })
 
@@ -82,8 +112,8 @@ onMounted(async () => {
     }
 
     for (const m of pendingMatches) {
-      const d = new Date(m.match_date)
-      const dateString = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      const d = getRealDate(m.date_text);
+      const dateString = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`
       const events = sofascoreDataByDate[dateString]
       if (events && events.length > 0) {
         const result = findMatchResultInSofascore(m, events)
