@@ -66,71 +66,79 @@ const championLogo = ref('')
 const fetchDashboardData = async () => {
   try {
     const token = localStorage.getItem('token')
-    if (!token) return
 
-    // Fetch matches and predictions in parallel
-    const [matchesRes, predsRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/api/matches`),
-      fetch(`${API_BASE_URL}/api/predictions`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-    ])
-    
-    if (matchesRes.ok && predsRes.ok) {
-      const matchesData = await matchesRes.json()
-      const predsData = await predsRes.json()
-      rawUserPredictions.value = predsData.predictions || []
-      const userPreds = rawUserPredictions.value
+    // 1. Fetch matches (public)
+    const matchesRes = await fetch(`${API_BASE_URL}/api/matches`)
+    if (!matchesRes.ok) return
+    const matchesData = await matchesRes.json()
 
-      if (!Array.isArray(matchesData)) {
-        console.warn('matchesData is not an array:', matchesData)
-        return
+    // 2. Fetch predictions (only if logged in)
+    let userPreds = []
+    let championId = null
+    if (token) {
+      try {
+        const predsRes = await fetch(`${API_BASE_URL}/api/predictions`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (predsRes.ok) {
+          const predsData = await predsRes.json()
+          rawUserPredictions.value = predsData.predictions || []
+          userPreds = rawUserPredictions.value
+          championId = predsData.champion_id
+        }
+      } catch(e) {
+        console.warn('Could not fetch predictions', e)
       }
+    }
 
-      predictions.value = (matchesData || []).map(match => {
-        if (!match) return null;
-        const found = userPreds.find(p => p && p.match_id === match.id)
-        
-        // Format real result
-        let realResult = 'Pendiente'
-        if (match.home_score_real !== undefined && match.home_score_real !== null && 
-            match.away_score_real !== undefined && match.away_score_real !== null) {
-          realResult = `${match.home_score_real} - ${match.away_score_real}`
-        }
+    if (!Array.isArray(matchesData)) {
+      console.warn('matchesData is not an array:', matchesData)
+      return
+    }
 
-        return {
-          id: match.id || Math.random(),
-          jornada: match.jornada || '?',
-          date: match.date_text || '',
-          match_date: match.match_date || null,
-          home: match.home_team || '?',
-          away: match.away_team || '?',
-          homeLogo: match.home_logo || '',
-          awayLogo: match.away_logo || '',
-          prediction: found ? `${found.home_score} - ${found.away_score}` : 'Pendiente',
-          realResult: realResult,
-          status: found ? 'Guardado' : 'Sin completar'
-        }
-      }).filter(p => p !== null)
-
-            // Correct counts to reflect only In-Scope Quiniela matches (Groups + R16)
-      const inScopeMatches = matchesData.filter(m => m && ['1','2','3','R16'].includes(m.jornada));
-      totalMatches.value = inScopeMatches.length + 1; // +1 for Champion choice
+    predictions.value = (matchesData || []).map(match => {
+      if (!match) return null;
+      const found = userPreds.find(p => p && p.match_id === match.id)
       
-      const inScopeIds = inScopeMatches.map(m => m.id);
-      completedMatches.value = userPreds.filter(p => p && inScopeIds.includes(p.match_id)).length;
-
-      // Show champion name
-      const cid = predsData.champion_id
-      // Show champion name and set logo
-      const teamObj = (cid && r16TeamsMap[cid]);
-      if (teamObj && typeof teamObj === 'object') {
-         championName.value = teamObj.name || 'N/D';
-         championLogo.value = teamObj.logo || '';
-      } else {
-         championName.value = (teamObj && typeof teamObj === 'string') ? teamObj : 'N/D';
-         championLogo.value = ''; 
+      // Format real result
+      let realResult = 'Pendiente'
+      if (match.home_score_real !== undefined && match.home_score_real !== null && 
+          match.away_score_real !== undefined && match.away_score_real !== null) {
+        realResult = `${match.home_score_real} - ${match.away_score_real}`
       }
+
+      return {
+        id: match.id || Math.random(),
+        jornada: match.jornada || '?',
+        date: match.date_text || '',
+        match_date: match.match_date || null,
+        home: match.home_team || '?',
+        away: match.away_team || '?',
+        homeLogo: match.home_logo || '',
+        awayLogo: match.away_logo || '',
+        prediction: found ? `${found.home_score} - ${found.away_score}` : 'Pendiente',
+        realResult: realResult,
+        status: found ? 'Guardado' : 'Sin completar'
+      }
+    }).filter(p => p !== null)
+
+    // Correct counts to reflect only In-Scope Quiniela matches (Groups + R16)
+    const inScopeMatches = matchesData.filter(m => m && ['1','2','3','R16'].includes(m.jornada));
+    totalMatches.value = inScopeMatches.length + 1; // +1 for Champion choice
+    
+    const inScopeIds = inScopeMatches.map(m => m.id);
+    completedMatches.value = userPreds.filter(p => p && inScopeIds.includes(p.match_id)).length;
+
+    // Show champion name
+    const cid = championId
+    // Show champion name and set logo
+    const teamObj = (cid && r16TeamsMap[cid]);
+    if (teamObj && typeof teamObj === 'object') {
+       championName.value = teamObj.name || 'N/D';
+       championLogo.value = teamObj.logo || '';
+    } else {
+       championName.value = (teamObj && typeof teamObj === 'string') ? teamObj : 'N/D';
+       championLogo.value = ''; 
     }
   } catch (err) {
     console.error('Error fetching dashboard data:', err)
