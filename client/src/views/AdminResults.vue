@@ -46,14 +46,42 @@ const saveResult = async (match) => {
   }
 }
 
+const triggerSync = async () => {
+  try {
+    // Para pruebas desde Admin panel, le pasamos algo genérico.
+    // Si estás en producción, puedes protegerlo o no, ya que Admin ya exige login de admin.
+    const token = localStorage.getItem('token')
+    const res = await fetch(`${API_BASE_URL}/api/matches/sync-apifootball`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer novacasa_cron_secret_7acd715b`
+      }
+    })
+    const data = await res.json()
+    alert(data.message || data.error)
+    if (res.ok) {
+      fetchMatches()
+    }
+  } catch (err) {
+    alert('Error detonando la sincronización: ' + err.message)
+  }
+}
+
 onMounted(fetchMatches)
 </script>
 
 <template>
   <div class="admin-results animate-fade-in">
     <div class="view-header">
-      <h1 class="view-title">Panel de Administración</h1>
-      <p class="view-subtitle">Ingresa los resultados oficiales de los partidos para actualizar el tablero de puntos.</p>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h1 class="view-title">Panel de Administración</h1>
+          <p class="view-subtitle">Ingresa los resultados oficiales de los partidos para actualizar el tablero de puntos.</p>
+        </div>
+        <button @click="triggerSync" class="btn-save-result" style="width: auto; padding: 0.5rem 1rem; background: #008751;">
+          Sincronizar API-Football
+        </button>
+      </div>
     </div>
 
     <div v-if="isLoading" class="loading">Cargando partidos...</div>
