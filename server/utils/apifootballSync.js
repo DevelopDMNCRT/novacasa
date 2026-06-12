@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 const teamDictionary = {
   'México': 'Mexico',
   'Estados Unidos': 'USA',
