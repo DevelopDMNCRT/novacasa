@@ -42,10 +42,12 @@ app.use(cors({
 
     // En produccion: permitir cualquier subdominio de vercel.app y dominios configurados
     if (isProduction) {
+      const allOrigins = process.env.ALL_ORIGINS ? process.env.ALL_ORIGINS.split(',') : [];
       const allowed =
         origin.endsWith('.vercel.app') ||
         (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) ||
-        (process.env.ADMIN_URL && origin === process.env.ADMIN_URL);
+        (process.env.ADMIN_URL && origin === process.env.ADMIN_URL) ||
+        allOrigins.includes(origin);
       return callback(null, allowed ? true : new Error('Not allowed by CORS'));
     }
 

@@ -19,7 +19,7 @@ const teamDictionary = {
   'Sudáfrica': 'South Africa',
   'Paraguay': 'Paraguay',
   'Argelia': 'Algeria',
-  'RD Congo': 'DR Congo',
+  'RD Congo': 'Congo DR',
   'Haití': 'Haiti',
   'Suecia': 'Sweden',
   'Costa Marfil': 'Ivory Coast',
