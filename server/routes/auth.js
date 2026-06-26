@@ -83,12 +83,16 @@ router.post('/login', async (req, res) => {
   }
 
   try {
+    const normalized = String(whatsapp).replace(/\D/g, '');
+    const last10 = normalized.length >= 10 ? normalized.slice(-10) : normalized;
+
     const result = await db.query(
-      'SELECT id, name, email, whatsapp, password_hash FROM users WHERE whatsapp = $1 AND deleted_at IS NULL',
-      [whatsapp.trim()]
+      'SELECT id, name, email, whatsapp, password_hash FROM users WHERE (whatsapp = $1 OR whatsapp LIKE $2) AND deleted_at IS NULL',
+      [whatsapp.trim(), `%${last10}`]
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[LOGIN FAILED - AUTH] No se encontró usuario con whatsapp: ${whatsapp}`);
       return res.status(401).json({ error: 'Número o contraseña incorrectos.' });
     }
 
@@ -96,6 +100,7 @@ router.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
+      console.warn(`[LOGIN FAILED - AUTH] Contraseña incorrecta para usuario con whatsapp: ${whatsapp}`);
       return res.status(401).json({ error: 'Número o contraseña incorrectos.' });
     }
 

@@ -104,6 +104,7 @@ router.post('/login', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[LOGIN FAILED - PARTICIPANTE] No se encontró participante con whatsapp: ${whatsapp}`);
       return res.status(401).json({ error: 'Número o contraseña incorrectos.' });
     }
 
@@ -111,6 +112,7 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, u.password_hash);
 
     if (!match) {
+      console.warn(`[LOGIN FAILED - PARTICIPANTE] Contraseña incorrecta para participante con whatsapp: ${whatsapp}`);
       return res.status(401).json({ error: 'Número o contraseña incorrectos.' });
     }
 

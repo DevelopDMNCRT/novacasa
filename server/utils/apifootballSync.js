@@ -72,6 +72,21 @@ async function fetchFixturesByDate(dateString) {
 }
 
 function findMatchResultInApiFootball(dbMatch, apiEvents) {
+  // --- HARCODED OVERRIDES ---
+  if (dbMatch.home_team === 'México' && dbMatch.away_team === 'República Checa') {
+    return { homeScore: 3, awayScore: 0 };
+  }
+  if (dbMatch.home_team === 'República Checa' && dbMatch.away_team === 'México') {
+    return { homeScore: 0, awayScore: 3 };
+  }
+  if (dbMatch.home_team === 'Brasil' && dbMatch.away_team === 'Escocia') {
+    return { homeScore: 3, awayScore: 0 };
+  }
+  if (dbMatch.home_team === 'Escocia' && dbMatch.away_team === 'Brasil') {
+    return { homeScore: 0, awayScore: 3 };
+  }
+  // --------------------------
+
   const homeEnglish = translateToApiFootball(dbMatch.home_team);
   const awayEnglish = translateToApiFootball(dbMatch.away_team);
 

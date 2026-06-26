@@ -15,13 +15,17 @@ router.post('/login', async (req, res) => {
   }
 
   try {
+    const normalized = String(telefono).replace(/\D/g, '');
+    const last10 = normalized.length >= 10 ? normalized.slice(-10) : normalized;
+
     const result = await db.query(
       `SELECT id, name, email, whatsapp, password_hash FROM users
-       WHERE whatsapp = $1 AND is_admin = TRUE AND deleted_at IS NULL`,
-      [telefono.trim()]
+       WHERE (whatsapp = $1 OR whatsapp LIKE $2) AND is_admin = TRUE AND deleted_at IS NULL`,
+      [telefono.trim(), `%${last10}`]
     );
 
     if (result.rows.length === 0) {
+      console.warn(`[LOGIN FAILED - ADMIN] No se encontró administrador con teléfono: ${telefono}`);
       return res.status(401).json({ error: 'Teléfono o contraseña incorrectos.' });
     }
 
@@ -29,6 +33,7 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(contraseña, user.password_hash);
 
     if (!match) {
+      console.warn(`[LOGIN FAILED - ADMIN] Contraseña incorrecta para administrador con teléfono: ${telefono}`);
       return res.status(401).json({ error: 'Teléfono o contraseña incorrectos.' });
     }
 
