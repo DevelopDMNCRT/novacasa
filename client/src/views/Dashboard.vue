@@ -201,6 +201,7 @@ const knockoutPredictions = computed(() => {
   if (!isJornada3Finalized.value) return []
   return r16Matches.map(match => {
     const found = rawUserPredictions.value.find(p => p.match_id === match.id)
+    const dbMatch = predictions.value.find(p => p.id === match.id)
     return {
       id: match.id,
       jornada: '16VOS',
@@ -210,7 +211,7 @@ const knockoutPredictions = computed(() => {
       homeLogo: match.homeLogo,
       awayLogo: match.awayLogo,
       prediction: found ? `${found.home_score} - ${found.away_score}` : 'Pendiente',
-      realResult: 'Pendiente',
+      realResult: dbMatch && dbMatch.realResult ? dbMatch.realResult : 'Pendiente',
       status: found ? 'Guardado' : 'Sin completar'
     }
   })
