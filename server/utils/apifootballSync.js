@@ -28,7 +28,22 @@ const teamDictionary = {
   'República Checa': 'Czech Republic',
   'Escocia': 'Scotland',
   'Jordania': 'Jordan',
-  'Noruega': 'Norway'
+  'Noruega': 'Norway',
+  'Canadá': 'Canada',
+  'Costa de Marfil': 'Ivory Coast',
+  'Ecuador': 'Ecuador',
+  'Bélgica': 'Belgium',
+  'Bosnia': 'Bosnia and Herzegovina',
+  'Suiza': 'Switzerland',
+  'Australia': 'Australia',
+  'Egipto': 'Egypt',
+  'Cabo Verde': 'Cape Verde',
+  'Ghana': 'Ghana',
+  'Rumania': 'Romania',
+  'Turquía': 'Turkey',
+  'Eslovaquia': 'Slovakia',
+  'Eslovenia': 'Slovenia',
+
 };
 
 function normalizeName(name) {
